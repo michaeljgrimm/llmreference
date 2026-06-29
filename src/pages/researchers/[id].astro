@@ -1,0 +1,139 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getResearchers, getResearcherDetail } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { freshness } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const researchers = await getResearchers();
+  return researchers.map((researcher) => ({
+    params: { id: researcher.id },
+    props: { researcher },
+  }));
+}
+
+const { researcher } = Astro.props;
+const detail = await getResearcherDetail(researcher);
+const { Content } = await render(researcher);
+const d = researcher.data;
+const now = new Date();
+const fresh = freshness(d.dataUpdated, now);
+const affName = detail.affiliation?.data.name ?? d.affiliationName;
+
+const title = `${d.name} — ${d.role ?? 'researcher'} | LLM Reference`;
+const description =
+  `${d.name}${d.role ? `, ${d.role}` : ''}${affName ? ` at ${affName}` : ''}. ` +
+  `Notable work and the models they are associated with.`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: d.name,
+  ...(d.role ? { jobTitle: d.role } : {}),
+  ...(affName ? { affiliation: { '@type': 'Organization', name: affName } } : {}),
+  ...(d.links?.homepage ? { url: d.links.homepage } : {}),
+};
+---
+
+<BaseLayout title={title} description={description} path={`/researchers/${researcher.id}`}>
+  <SiteHeader active="researchers" />
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/researchers')}>← Researchers</a>
+    </nav>
+
+    <header class="detail-head">
+      <div class="detail-head__title">
+        <h1>{d.name}</h1>
+      </div>
+      <p class="detail-head__meta">
+        {d.role ?? 'Researcher'}
+        {
+          affName &&
+            (detail.affiliation ? (
+              <span>
+                {' at '}
+                <a href={href(`/providers/${detail.affiliation.id}`)}>{affName}</a>
+              </span>
+            ) : (
+              <span> at {affName}</span>
+            ))
+        }
+        {fresh && <span class="fresh"> · {fresh}</span>}
+      </p>
+    </header>
+
+    <div class="detail-body">
+      <Content />
+    </div>
+
+    {
+      d.notableWork.length > 0 && (
+        <section class="spec-section" aria-labelledby="work-h">
+          <h2 id="work-h">Notable work</h2>
+          <ul class="link-list">
+            {d.notableWork.map((w) => (
+              <li>
+                {w.url ? (
+                  <a href={w.url} rel="noopener" target="_blank">{w.title}</a>
+                ) : (
+                  <span>{w.title}</span>
+                )}
+                {w.year && <span class="muted"> · {w.year}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      detail.notableModels.length > 0 && (
+        <section class="spec-section" aria-labelledby="models-h">
+          <h2 id="models-h">Associated models</h2>
+          <ul class="link-list">
+            {detail.notableModels.map((m) => (
+              <li>
+                <a href={href(`/models/${m.id}`)}>{m.data.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      d.links && Object.values(d.links).some(Boolean) && (
+        <section class="spec-section" aria-labelledby="links-h">
+          <h2 id="links-h">Links</h2>
+          <ul class="link-list">
+            {d.links.homepage && (
+              <li><a href={d.links.homepage} rel="noopener" target="_blank">Homepage ↗</a></li>
+            )}
+            {d.links.scholar && (
+              <li><a href={d.links.scholar} rel="noopener" target="_blank">Google Scholar ↗</a></li>
+            )}
+            {d.links.github && (
+              <li>
+                <a href={`https://github.com/${d.links.github}`} rel="noopener" target="_blank">
+                  GitHub ↗
+                </a>
+              </li>
+            )}
+            {d.links.twitter && (
+              <li>
+                <a href={`https://twitter.com/${d.links.twitter}`} rel="noopener" target="_blank">
+                  Twitter/X ↗
+                </a>
+              </li>
+            )}
+          </ul>
+        </section>
+      )
+    }
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </main>
+</BaseLayout>

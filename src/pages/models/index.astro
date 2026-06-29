@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getModels, getProviders } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { formatDate, formatTokens, formatPrice, titleCase } from '../../lib/format';
+
+const [models, providers] = await Promise.all([getModels(), getProviders()]);
+const providerName = new Map(providers.map((p) => [p.id, p.data.name]));
+
+// Build the rich rows once on the server; client-side JS only toggles visibility.
+const rows = models.map((m) => {
+  const pName = providerName.get(m.data.provider.id) ?? m.data.provider.id;
+  const haystack = [
+    m.data.name,
+    m.data.family,
+    pName,
+    m.data.apiId,
+    ...m.data.tags,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return { m, pName, haystack };
+});
+
+// Filter option lists derived from the data present.
+const usedProviders = providers.filter((p) =>
+  models.some((m) => m.data.provider.id === p.id),
+);
+const statuses = [...new Set(models.map((m) => m.data.status))].sort();
+
+const title = 'LLM Model Directory — context windows, pricing & benchmarks | LLM Reference';
+const description =
+  'Browse and search every notable large language model: context window, modalities, pricing, license, release date, and benchmark scores. Filter by provider, status, and open weights.';
+---
+
+<BaseLayout title={title} description={description} path="/models">
+  <SiteHeader active="models" />
+  <main>
+    <header class="page-head">
+      <h1>Model Directory</h1>
+      <p class="page-sub">
+        {models.length} model{models.length === 1 ? '' : 's'} indexed. Search and filter,
+        then open any model for full specs and benchmark scores.
+      </p>
+    </header>
+
+    <section class="controls" aria-label="Search and filter models">
+      <div class="control control--search">
+        <label for="model-search" class="sr-only">Search models</label>
+        <input
+          id="model-search"
+          type="search"
+          placeholder="Search by name, family, provider, or tag…"
+          autocomplete="off"
+        />
+      </div>
+      <div class="control">
+        <label for="filter-provider" class="sr-only">Provider</label>
+        <select id="filter-provider">
+          <option value="">All providers</option>
+          {usedProviders.map((p) => <option value={p.id}>{p.data.name}</option>)}
+        </select>
+      </div>
+      <div class="control">
+        <label for="filter-status" class="sr-only">Status</label>
+        <select id="filter-status">
+          <option value="">Any status</option>
+          {statuses.map((s) => <option value={s}>{titleCase(s)}</option>)}
+        </select>
+      </div>
+      <div class="control">
+        <label for="filter-weights" class="sr-only">Weights</label>
+        <select id="filter-weights">
+          <option value="">All weights</option>
+          <option value="open">Open weights</option>
+          <option value="closed">Proprietary</option>
+        </select>
+      </div>
+    </section>
+
+    <p class="result-count" role="status" aria-live="polite"></p>
+
+    <ul class="model-grid" id="model-grid">
+      {
+        rows.map(({ m, pName, haystack }) => (
+          <li
+            class="model-card"
+            data-haystack={haystack}
+            data-provider={m.data.provider.id}
+            data-status={m.data.status}
+            data-weights={m.data.openWeights ? 'open' : 'closed'}
+          >
+            <a class="model-card__link" href={href(`/models/${m.id}`)}>
+              <div class="model-card__top">
+                <h2>{m.data.name}</h2>
+                <span class={`badge badge--${m.data.status}`}>{titleCase(m.data.status)}</span>
+              </div>
+              <p class="model-card__provider">{pName}</p>
+              <dl class="model-card__specs">
+                <div>
+                  <dt>Context</dt>
+                  <dd>{formatTokens(m.data.contextWindow)}</dd>
+                </div>
+                <div>
+                  <dt>Input</dt>
+                  <dd>
+                    {m.data.pricing?.inputPerMTok != null
+                      ? `${formatPrice(m.data.pricing.inputPerMTok, m.data.pricing.currency)}/M`
+                      : m.data.openWeights
+                        ? 'Open'
+                        : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Released</dt>
+                  <dd>{formatDate(m.data.releaseDate)}</dd>
+                </div>
+              </dl>
+              {m.data.tags.length > 0 && (
+                <ul class="tag-row">
+                  {m.data.tags.slice(0, 3).map((t) => (
+                    <li class="tag">{t}</li>
+                  ))}
+                </ul>
+              )}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="empty-state" id="empty-state" hidden>
+      No models match your search. Try clearing a filter.
+    </p>
+  </main>
+
+  <script>
+    // Progressive enhancement: all rows are server-rendered, JS only toggles
+    // visibility. The page is fully browsable (and SEO-indexable) without JS.
+    const search = document.getElementById('model-search') as HTMLInputElement;
+    const fProvider = document.getElementById('filter-provider') as HTMLSelectElement;
+    const fStatus = document.getElementById('filter-status') as HTMLSelectElement;
+    const fWeights = document.getElementById('filter-weights') as HTMLSelectElement;
+    const grid = document.getElementById('model-grid')!;
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.model-card'));
+    const count = document.querySelector<HTMLElement>('.result-count')!;
+    const empty = document.getElementById('empty-state')!;
+
+    function apply() {
+      const q = search.value.trim().toLowerCase();
+      const terms = q.split(/\s+/).filter(Boolean);
+      const prov = fProvider.value;
+      const status = fStatus.value;
+      const weights = fWeights.value;
+      let shown = 0;
+
+      for (const card of cards) {
+        const hay = card.dataset.haystack ?? '';
+        const matchesText = terms.every((t) => hay.includes(t));
+        const matchesProv = !prov || card.dataset.provider === prov;
+        const matchesStatus = !status || card.dataset.status === status;
+        const matchesWeights = !weights || card.dataset.weights === weights;
+        const visible = matchesText && matchesProv && matchesStatus && matchesWeights;
+        card.hidden = !visible;
+        if (visible) shown++;
+      }
+
+      count.textContent = `${shown} of ${cards.length} model${cards.length === 1 ? '' : 's'}`;
+      empty.hidden = shown !== 0;
+    }
+
+    for (const el of [search, fProvider, fStatus, fWeights]) {
+      el.addEventListener('input', apply);
+    }
+    apply();
+  </script>
+</BaseLayout>

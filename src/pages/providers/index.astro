@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getProviders, getModels } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { titleCase } from '../../lib/format';
+
+const [providers, models] = await Promise.all([getProviders(), getModels()]);
+const modelCount = new Map<string, number>();
+for (const m of models) {
+  modelCount.set(m.data.provider.id, (modelCount.get(m.data.provider.id) ?? 0) + 1);
+}
+
+const title = 'LLM Providers — labs & companies building language models | LLM Reference';
+const description =
+  'Directory of the labs, companies, and organizations that build large language models — with their type, headquarters, and the models they ship.';
+---
+
+<BaseLayout title={title} description={description} path="/providers">
+  <SiteHeader active="providers" />
+  <main>
+    <header class="page-head">
+      <h1>Providers</h1>
+      <p class="page-sub">
+        {providers.length} organization{providers.length === 1 ? '' : 's'} building the models.
+      </p>
+    </header>
+
+    <ul class="entity-grid">
+      {
+        providers.map((p) => (
+          <li class="entity-card">
+            <a href={href(`/providers/${p.id}`)}>
+              <h2>{p.data.name}</h2>
+              <p class="entity-card__meta">
+                {titleCase(p.data.type)}
+                {p.data.country && <span> · {p.data.country}</span>}
+              </p>
+              <p class="entity-card__count">
+                {modelCount.get(p.id) ?? 0} model{(modelCount.get(p.id) ?? 0) === 1 ? '' : 's'}
+              </p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</BaseLayout>

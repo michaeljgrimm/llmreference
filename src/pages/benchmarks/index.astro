@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getBenchmarks, getModels } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { titleCase } from '../../lib/format';
+
+const [benchmarks, models] = await Promise.all([getBenchmarks(), getModels()]);
+const resultCount = new Map<string, number>();
+for (const m of models) {
+  for (const b of m.data.benchmarks) {
+    resultCount.set(b.benchmark.id, (resultCount.get(b.benchmark.id) ?? 0) + 1);
+  }
+}
+
+const title = 'LLM Benchmarks — standardized evaluations & leaderboards | LLM Reference';
+const description =
+  'Reference for the standardized benchmarks used to evaluate large language models — what each measures, and which models score highest.';
+---
+
+<BaseLayout title={title} description={description} path="/benchmarks">
+  <SiteHeader active="benchmarks" />
+  <main>
+    <header class="page-head">
+      <h1>Benchmarks</h1>
+      <p class="page-sub">
+        {benchmarks.length} evaluation{benchmarks.length === 1 ? '' : 's'} tracked.
+      </p>
+    </header>
+
+    <ul class="entity-grid">
+      {
+        benchmarks.map((b) => (
+          <li class="entity-card">
+            <a href={href(`/benchmarks/${b.id}`)}>
+              <h2>{b.data.name}</h2>
+              <p class="entity-card__meta">
+                {titleCase(b.data.category)} · {b.data.metric}
+              </p>
+              <p class="entity-card__count">
+                {resultCount.get(b.id) ?? 0} model result{(resultCount.get(b.id) ?? 0) === 1 ? '' : 's'}
+              </p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</BaseLayout>

@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getResearchers, getProviders } from '../../lib/queries';
+import { href } from '../../lib/url';
+
+const [researchers, providers] = await Promise.all([getResearchers(), getProviders()]);
+const providerName = new Map(providers.map((p) => [p.id, p.data.name]));
+
+const title = 'LLM Researchers — the people behind the models | LLM Reference';
+const description =
+  'Directory of notable researchers behind large language models — their affiliations, roles, and the work they are known for.';
+---
+
+<BaseLayout title={title} description={description} path="/researchers">
+  <SiteHeader active="researchers" />
+  <main>
+    <header class="page-head">
+      <h1>Researchers</h1>
+      <p class="page-sub">
+        {researchers.length} researcher{researchers.length === 1 ? '' : 's'} indexed.
+      </p>
+    </header>
+
+    {
+      researchers.length > 0 ? (
+        <ul class="entity-grid">
+          {researchers.map((r) => {
+            const aff = r.data.affiliation
+              ? providerName.get(r.data.affiliation.id)
+              : r.data.affiliationName;
+            return (
+              <li class="entity-card">
+                <a href={href(`/researchers/${r.id}`)}>
+                  <h2>{r.data.name}</h2>
+                  <p class="entity-card__meta">
+                    {r.data.role ?? 'Researcher'}
+                    {aff && <span> · {aff}</span>}
+                  </p>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p class="muted">No researchers indexed yet.</p>
+      )
+    }
+  </main>
+</BaseLayout>

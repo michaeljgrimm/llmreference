@@ -1,0 +1,114 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getBenchmarks, getBenchmarkDetail } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { titleCase, freshness } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const benchmarks = await getBenchmarks();
+  return benchmarks.map((benchmark) => ({ params: { id: benchmark.id }, props: { benchmark } }));
+}
+
+const { benchmark } = Astro.props;
+const detail = await getBenchmarkDetail(benchmark);
+const { Content } = await render(benchmark);
+const d = benchmark.data;
+const now = new Date();
+const fresh = freshness(d.dataUpdated, now);
+
+const title = `${d.name} benchmark — leaderboard & details | LLM Reference`;
+const description =
+  `${d.fullName ?? d.name} (${titleCase(d.category)}): measured in ${d.metric}. ` +
+  `See which large language models score highest.`;
+
+const info = ([
+  ['Full name', d.fullName ?? '—'],
+  ['Category', titleCase(d.category)],
+  ['Metric', d.metric],
+  ['Direction', d.higherIsBetter ? 'Higher is better' : 'Lower is better'],
+  ['Max score', d.maxScore != null ? String(d.maxScore) : '—'],
+] as [string, string][]).filter(([, v]) => v && v !== '—');
+---
+
+<BaseLayout title={title} description={description} path={`/benchmarks/${benchmark.id}`}>
+  <SiteHeader active="benchmarks" />
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/benchmarks')}>← Benchmarks</a>
+    </nav>
+
+    <header class="detail-head">
+      <div class="detail-head__title">
+        <h1>{d.name}</h1>
+        <span class="badge badge--preview">{titleCase(d.category)}</span>
+      </div>
+      <p class="detail-head__meta">
+        {d.fullName && <span>{d.fullName} · </span>}
+        Measured in {d.metric}
+        {
+          (d.url || d.paper) && (
+            <span>
+              {' · '}
+              {d.paper && <a href={d.paper} rel="noopener" target="_blank">Paper ↗</a>}
+              {d.url && d.paper && ' · '}
+              {d.url && <a href={d.url} rel="noopener" target="_blank">Site ↗</a>}
+            </span>
+          )
+        }
+        {fresh && <span class="fresh"> · {fresh}</span>}
+      </p>
+    </header>
+
+    <div class="detail-body">
+      <Content />
+    </div>
+
+    <section class="spec-section" aria-labelledby="info-h">
+      <h2 id="info-h">About this benchmark</h2>
+      <table class="spec-table">
+        <tbody>
+          {
+            info.map(([label, value]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                <td>{value}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="spec-section" aria-labelledby="board-h">
+      <h2 id="board-h">Leaderboard</h2>
+      {
+        detail.results.length > 0 ? (
+          <table class="spec-table spec-table--bench">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Model</th>
+                <th scope="col">Score</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detail.results.map((r, i) => (
+                <tr>
+                  <td class="muted">{i + 1}</td>
+                  <td><a href={href(`/models/${r.model.id}`)}>{r.model.data.name}</a></td>
+                  <td class="score">{r.score}</td>
+                  <td class="muted">{r.notes ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p class="muted">No model scores recorded for this benchmark yet.</p>
+        )
+      }
+    </section>
+  </main>
+</BaseLayout>

@@ -1,32 +1,50 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import { getModels, getProviders, getResearchers, getBenchmarks } from '../lib/queries';
+import { href } from '../lib/url';
+
+const [models, providers, researchers, benchmarks] = await Promise.all([
+  getModels(),
+  getProviders(),
+  getResearchers(),
+  getBenchmarks(),
+]);
 
 const title = 'LLM Reference — The up-to-the-day database for LLMs, providers & researchers';
 const description =
   'LLM Reference is a continuously updated reference database covering large language models, the providers that build them, the researchers behind them, and the benchmarks that measure them.';
 
-// Placeholder of what the directory will index. Replaced by real data (LLM-3/LLM-4).
 const pillars = [
   {
     name: 'Models',
+    count: models.length,
+    path: '/models',
     blurb: 'Every notable LLM with context windows, modalities, pricing, and release dates.',
   },
   {
     name: 'Providers',
+    count: providers.length,
+    path: '/providers',
     blurb: 'The labs and companies shipping models, their APIs, and how they compare.',
   },
   {
     name: 'Researchers',
+    count: researchers.length,
+    path: '/researchers',
     blurb: 'The people behind the breakthroughs and the work they are known for.',
   },
   {
     name: 'Benchmarks',
+    count: benchmarks.length,
+    path: '/benchmarks',
     blurb: 'Standardized evaluations and how each model scores across them.',
   },
 ];
 ---
 
 <BaseLayout title={title} description={description} path="/">
+  <SiteHeader />
   <main>
     <section class="hero">
       <p class="eyebrow">www.llmreference.com</p>
@@ -37,8 +55,8 @@ const pillars = [
         <strong>benchmarks</strong> — built to be the fastest way to look up what's
         true about the AI landscape today.
       </p>
-      <p class="status" role="status">
-        🚧 Early build in progress. The directory and detail pages are landing next.
+      <p class="hero-cta">
+        <a class="btn" href={href('/models')}>Browse the model directory →</a>
       </p>
     </section>
 
@@ -47,8 +65,12 @@ const pillars = [
         {
           pillars.map((p) => (
             <li>
-              <h2>{p.name}</h2>
-              <p>{p.blurb}</p>
+              <a href={href(p.path)}>
+                <h2>
+                  {p.name} <span class="pillar-count">{p.count}</span>
+                </h2>
+                <p>{p.blurb}</p>
+              </a>
             </li>
           ))
         }

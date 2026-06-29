@@ -1,0 +1,115 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getProviders, getProviderDetail } from '../../lib/queries';
+import { href } from '../../lib/url';
+import { formatDate, formatTokens, titleCase, freshness } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const providers = await getProviders();
+  return providers.map((provider) => ({ params: { id: provider.id }, props: { provider } }));
+}
+
+const { provider } = Astro.props;
+const detail = await getProviderDetail(provider);
+const { Content } = await render(provider);
+const d = provider.data;
+const now = new Date();
+const fresh = freshness(d.dataUpdated, now);
+
+const title = `${d.name} — models, profile & details | LLM Reference`;
+const description =
+  `${d.name}: ${titleCase(d.type)}${d.headquarters ? ` headquartered in ${d.headquarters}` : ''}` +
+  `${d.founded ? `, founded ${d.founded}` : ''}. ${detail.models.length} model(s) tracked.`;
+
+const info = ([
+  ['Type', titleCase(d.type)],
+  ['Headquarters', d.headquarters ?? d.country ?? '—'],
+  ['Founded', d.founded ? String(d.founded) : '—'],
+  ['Status', titleCase(d.status)],
+  ['Parent org', detail.parent?.data.name ?? '—'],
+] as [string, string][]).filter(([, v]) => v && v !== '—');
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: d.name,
+  ...(d.legalName ? { legalName: d.legalName } : {}),
+  ...(d.website ? { url: d.website } : {}),
+  ...(d.founded ? { foundingDate: String(d.founded) } : {}),
+};
+---
+
+<BaseLayout title={title} description={description} path={`/providers/${provider.id}`}>
+  <SiteHeader active="providers" />
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/providers')}>← Providers</a>
+    </nav>
+
+    <header class="detail-head">
+      <div class="detail-head__title">
+        <h1>{d.name}</h1>
+        <span class={`badge badge--${d.status === 'active' ? 'available' : 'deprecated'}`}>
+          {titleCase(d.status)}
+        </span>
+      </div>
+      <p class="detail-head__meta">
+        {titleCase(d.type)}
+        {d.website && (
+          <span>
+            {' · '}
+            <a href={d.website} rel="noopener" target="_blank">Website ↗</a>
+          </span>
+        )}
+        {fresh && <span class="fresh"> · {fresh}</span>}
+      </p>
+    </header>
+
+    <div class="detail-body">
+      <Content />
+    </div>
+
+    <section class="spec-section" aria-labelledby="info-h">
+      <h2 id="info-h">Profile</h2>
+      <table class="spec-table">
+        <tbody>
+          {
+            info.map(([label, value]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                <td>{value}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="spec-section" aria-labelledby="models-h">
+      <h2 id="models-h">Models ({detail.models.length})</h2>
+      {
+        detail.models.length > 0 ? (
+          <ul class="link-list">
+            {detail.models.map((m) => (
+              <li>
+                <a href={href(`/models/${m.id}`)}>{m.data.name}</a>
+                <span class="muted">
+                  {' · '}
+                  {titleCase(m.data.status)}
+                  {m.data.contextWindow ? ` · ${formatTokens(m.data.contextWindow)} ctx` : ''}
+                  {m.data.releaseDate ? ` · ${formatDate(m.data.releaseDate)}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="muted">No models tracked yet.</p>
+        )
+      }
+    </section>
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </main>
+</BaseLayout>

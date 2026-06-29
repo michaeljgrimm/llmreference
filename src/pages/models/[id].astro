@@ -1,0 +1,198 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { getModels, getModelDetail } from '../../lib/queries';
+import { href } from '../../lib/url';
+import {
+  formatDate,
+  isoDate,
+  formatTokens,
+  formatPrice,
+  titleCase,
+  freshness,
+} from '../../lib/format';
+
+export async function getStaticPaths() {
+  const models = await getModels();
+  return models.map((model) => ({ params: { id: model.id }, props: { model } }));
+}
+
+const { model } = Astro.props;
+const detail = await getModelDetail(model);
+const { Content } = await render(model);
+const d = model.data;
+const now = new Date();
+
+const title = `${d.name} — specs, pricing & benchmarks | LLM Reference`;
+const description =
+  `${d.name}${d.family ? ` (${d.family})` : ''} by ${detail.provider.data.name}: ` +
+  `${d.contextWindow ? `${formatTokens(d.contextWindow)} context, ` : ''}` +
+  `${d.pricing?.inputPerMTok != null ? `pricing from ${formatPrice(d.pricing.inputPerMTok)}/MTok, ` : ''}` +
+  `release date, license, modalities, and benchmark scores.`;
+
+const inMods = d.modality.input.map(titleCase).join(', ');
+const outMods = d.modality.output.map(titleCase).join(', ');
+const fresh = freshness(d.dataUpdated, now);
+
+// Per-entity structured data for rich results / AI crawlers.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  applicationCategory: 'Large Language Model',
+  name: d.name,
+  ...(d.releaseDate ? { datePublished: isoDate(d.releaseDate) } : {}),
+  ...(d.version ? { softwareVersion: d.version } : {}),
+  author: { '@type': 'Organization', name: detail.provider.data.name },
+  ...(d.pricing?.inputPerMTok != null
+    ? {
+        offers: {
+          '@type': 'Offer',
+          price: d.pricing.inputPerMTok,
+          priceCurrency: d.pricing.currency ?? 'USD',
+          description: 'Price per million input tokens',
+        },
+      }
+    : {}),
+};
+
+// Spec rows: [label, value] — value '—' rows are dropped to keep the table tight.
+const specs = ([
+  ['Provider', detail.provider.data.name],
+  ['Family', d.family ?? '—'],
+  ['Version', d.version ?? '—'],
+  ['Status', titleCase(d.status)],
+  ['Released', formatDate(d.releaseDate)],
+  ['Announced', formatDate(d.announcedDate)],
+  ['Knowledge cutoff', formatDate(d.knowledgeCutoff)],
+  ['Context window', formatTokens(d.contextWindow) + (d.contextWindow ? ' tokens' : '')],
+  ['Max output', formatTokens(d.maxOutputTokens) + (d.maxOutputTokens ? ' tokens' : '')],
+  ['Input modalities', inMods],
+  ['Output modalities', outMods],
+  ['Parameters', d.parameters ?? '—'],
+  ['License', d.license ?? '—'],
+  ['Open weights', d.openWeights ? 'Yes' : 'No'],
+  ['API id', d.apiId ?? '—'],
+] as [string, string][]).filter(([, v]) => v && v !== '—');
+---
+
+<BaseLayout title={title} description={description} path={`/models/${model.id}`}>
+  <SiteHeader active="models" />
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/models')}>← Models</a>
+    </nav>
+
+    <header class="detail-head">
+      <div class="detail-head__title">
+        <h1>{d.name}</h1>
+        <span class={`badge badge--${d.status}`}>{titleCase(d.status)}</span>
+      </div>
+      <p class="detail-head__meta">
+        by <a href={href(`/providers/${detail.provider.id}`)}>{detail.provider.data.name}</a>
+        {d.family && <span> · {d.family}</span>}
+        {fresh && <span class="fresh"> · {fresh}</span>}
+      </p>
+    </header>
+
+    {/* Pricing highlight */}
+    {
+      d.pricing && (d.pricing.inputPerMTok != null || d.pricing.outputPerMTok != null) && (
+        <section class="price-strip" aria-label="Pricing">
+          <div>
+            <span class="price-strip__label">Input</span>
+            <span class="price-strip__val">
+              {formatPrice(d.pricing.inputPerMTok, d.pricing.currency)}<small>/MTok</small>
+            </span>
+          </div>
+          <div>
+            <span class="price-strip__label">Output</span>
+            <span class="price-strip__val">
+              {formatPrice(d.pricing.outputPerMTok, d.pricing.currency)}<small>/MTok</small>
+            </span>
+          </div>
+          {d.pricing.cachedInputPerMTok != null && (
+            <div>
+              <span class="price-strip__label">Cached input</span>
+              <span class="price-strip__val">
+                {formatPrice(d.pricing.cachedInputPerMTok, d.pricing.currency)}<small>/MTok</small>
+              </span>
+            </div>
+          )}
+        </section>
+      )
+    }
+
+    <div class="detail-body">
+      <Content />
+    </div>
+
+    <section class="spec-section" aria-labelledby="specs-h">
+      <h2 id="specs-h">Specifications</h2>
+      <table class="spec-table">
+        <tbody>
+          {
+            specs.map(([label, value]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                <td>{value}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
+
+    {
+      detail.scores.length > 0 && (
+        <section class="spec-section" aria-labelledby="bench-h">
+          <h2 id="bench-h">Benchmark scores</h2>
+          <table class="spec-table spec-table--bench">
+            <thead>
+              <tr>
+                <th scope="col">Benchmark</th>
+                <th scope="col">Score</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detail.scores.map((s) => (
+                <tr>
+                  <td>
+                    <a href={href(`/benchmarks/${s.benchmark.id}`)}>{s.benchmark.data.name}</a>
+                    <span class="muted"> · {s.benchmark.data.metric}</span>
+                  </td>
+                  <td class="score">
+                    {s.score}
+                    {s.unit && <small> {s.unit}</small>}
+                  </td>
+                  <td class="muted">{s.notes ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )
+    }
+
+    {
+      d.sources.length > 0 && (
+        <section class="spec-section sources" aria-labelledby="src-h">
+          <h2 id="src-h">Sources</h2>
+          <ul>
+            {d.sources.map((src) => (
+              <li>
+                <a href={src.url} rel="nofollow noopener" target="_blank">
+                  {src.title}
+                </a>
+                {src.date && <span class="muted"> · {formatDate(src.date)}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </main>
+</BaseLayout>

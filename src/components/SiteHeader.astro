@@ -1,0 +1,35 @@
+---
+import { href } from '../lib/url';
+
+export interface Props {
+  /** Top-level section to highlight, e.g. 'models'. */
+  active?: string;
+}
+const { active } = Astro.props;
+
+const links = [
+  { id: 'models', label: 'Models', path: '/models' },
+  { id: 'providers', label: 'Providers', path: '/providers' },
+  { id: 'researchers', label: 'Researchers', path: '/researchers' },
+  { id: 'benchmarks', label: 'Benchmarks', path: '/benchmarks' },
+];
+---
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href={href('/')}>LLM<span>Reference</span></a>
+    <nav aria-label="Primary">
+      <ul>
+        {
+          links.map((l) => (
+            <li>
+              <a href={href(l.path)} aria-current={active === l.id ? 'page' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

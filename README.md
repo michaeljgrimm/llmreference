@@ -3,8 +3,8 @@
 The up-to-the-day reference database for large language models — **models, providers,
 researchers, and benchmarks**. Source for **www.llmreference.com**.
 
-> Status: foundational scaffold + core data model. Placeholder homepage is live and
-> auto-deploys on every push to `main`. The public directory lands next (LLM-4).
+> Status: public directory is **live** — browse/search models and open detail pages for
+> models, providers, researchers, and benchmarks. Auto-deploys on every push to `main`.
 >
 > **Data model:** four file-based content collections (models, providers, researchers,
 > benchmarks) with type-safe Zod schemas and cross-entity references — see
@@ -39,8 +39,15 @@ llmreference/
 │  ├─ content.config.ts          # Zod schemas for the 4 collections (source of truth)
 │  ├─ content/<entity>/*.md       # the data: models, providers, researchers, benchmarks
 │  ├─ lib/queries.ts             # typed listing + detail queries (relations resolved)
+│  ├─ lib/url.ts                 # href() — base-path-aware internal links
+│  ├─ lib/format.ts             # date/token/price/freshness display helpers
+│  ├─ components/SiteHeader.astro # shared top nav
 │  ├─ layouts/BaseLayout.astro   # <head>, SEO meta, JSON-LD, OG/Twitter
-│  ├─ pages/index.astro          # placeholder homepage
+│  ├─ pages/index.astro          # homepage (links into the directory)
+│  ├─ pages/models/             # /models listing (search+filter) + /models/[id] detail
+│  ├─ pages/providers/          # /providers listing + /providers/[id] detail
+│  ├─ pages/researchers/        # /researchers listing + /researchers/[id] detail
+│  ├─ pages/benchmarks/         # /benchmarks listing + /benchmarks/[id] (leaderboard)
 │  └─ styles/global.css
 ├─ public/                 # static passthrough: favicon, og image, robots.txt
 └─ .github/workflows/
@@ -94,5 +101,9 @@ The deploy is parameterized so moving to the production domain is config-only:
 - TypeScript strict (`astro/tsconfigs/strict`). Keep `npm run check` green — CI enforces it.
 - All page `<head>` content goes through `BaseLayout.astro`; pass `title`/`description`/`path`
   so canonical, OG, and sitemap stay correct.
-- Reference internal URLs with `import.meta.env.BASE_URL` (never hard-code `/llmreference`) so
-  the base-path/custom-domain switch stays a one-line config change.
+- Reference internal URLs with the `href()` helper from `src/lib/url.ts` (never hard-code
+  `/llmreference`) so the base-path/custom-domain switch stays a one-line config change.
+- Pages are statically generated; cross-entity links and detail pages come from
+  `src/lib/queries.ts`. The model directory's search/filter is progressive enhancement — all
+  rows are server-rendered and indexable; the inline script only toggles visibility, so the
+  page works (and ranks) with JavaScript disabled.
