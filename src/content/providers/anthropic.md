@@ -1,5 +1,6 @@
 ---
 name: Anthropic
+legalName: Anthropic PBC
 type: company
 country: United States
 headquarters: San Francisco, California
@@ -9,11 +10,15 @@ status: active
 socials:
   twitter: AnthropicAI
   github: anthropics
+  huggingface: Anthropic
 dataUpdated: 2026-06-29
 sources:
-  - title: Anthropic — About
-    url: https://www.anthropic.com/company
+  - title: Anthropic — Wikipedia
+    url: https://en.wikipedia.org/wiki/Anthropic
+    date: 2026-06-29
+  - title: Anthropic — Britannica Money
+    url: https://www.britannica.com/money/Anthropic-PBC
+    date: 2026-06-29
 ---
 
-Anthropic is an AI safety company building reliable, interpretable, and steerable
-AI systems, best known for the **Claude** family of large language models.
+AI safety company and public-benefit corporation that develops the **Claude** family of large language models, founded by former OpenAI members.

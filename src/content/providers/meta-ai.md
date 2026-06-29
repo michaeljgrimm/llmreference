@@ -1,20 +1,21 @@
 ---
 name: Meta AI
 legalName: Meta Platforms, Inc.
-type: research-lab
+type: company
 country: United States
 headquarters: Menlo Park, California
 founded: 2013
 website: https://ai.meta.com
 status: active
 socials:
-  github: meta-llama
-  huggingface: meta-llama
+  twitter: AIatMeta
+  github: facebookresearch
+  huggingface: facebook
 dataUpdated: 2026-06-29
 sources:
-  - title: Meta AI
-    url: https://ai.meta.com
+  - title: Meta AI — Wikipedia
+    url: https://en.wikipedia.org/wiki/Meta_AI
+    date: 2026-06-29
 ---
 
-Meta AI is the artificial-intelligence research division of Meta Platforms,
-responsible for the open-weights **Llama** model family.
+Meta Platforms' AI division (FAIR, now consolidated under Meta Superintelligence Labs) that develops the open-weight **Llama** model family.

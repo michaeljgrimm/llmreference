@@ -1,5 +1,6 @@
 ---
 name: OpenAI
+legalName: OpenAI OpCo, LLC
 type: company
 country: United States
 headquarters: San Francisco, California
@@ -9,11 +10,12 @@ status: active
 socials:
   twitter: OpenAI
   github: openai
+  huggingface: openai
 dataUpdated: 2026-06-29
 sources:
-  - title: OpenAI — About
-    url: https://openai.com/about
+  - title: OpenAI — Wikipedia
+    url: https://en.wikipedia.org/wiki/OpenAI
+    date: 2026-06-29
 ---
 
-OpenAI is an AI research and deployment company, creator of the **GPT** series of
-models and the ChatGPT product.
+AI research and deployment company behind the GPT models and ChatGPT, structured as a for-profit group governed by the OpenAI nonprofit foundation.

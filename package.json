@@ -13,6 +13,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "new": "node scripts/new-entry.mjs",
+    "audit": "node scripts/audit-data.mjs",
+    "audit:strict": "node scripts/audit-data.mjs --strict",
     "astro": "astro"
   },
   "dependencies": {
