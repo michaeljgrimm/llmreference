@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'LLM Reference — The up-to-the-day database for LLMs, providers & researchers';
+const description =
+  'LLM Reference is a continuously updated reference database covering large language models, the providers that build them, the researchers behind them, and the benchmarks that measure them.';
+
+// Placeholder of what the directory will index. Replaced by real data (LLM-3/LLM-4).
+const pillars = [
+  {
+    name: 'Models',
+    blurb: 'Every notable LLM with context windows, modalities, pricing, and release dates.',
+  },
+  {
+    name: 'Providers',
+    blurb: 'The labs and companies shipping models, their APIs, and how they compare.',
+  },
+  {
+    name: 'Researchers',
+    blurb: 'The people behind the breakthroughs and the work they are known for.',
+  },
+  {
+    name: 'Benchmarks',
+    blurb: 'Standardized evaluations and how each model scores across them.',
+  },
+];
+---
+
+<BaseLayout title={title} description={description} path="/">
+  <main>
+    <section class="hero">
+      <p class="eyebrow">www.llmreference.com</p>
+      <h1>The up-to-the-day reference for large language models.</h1>
+      <p class="lede">
+        A continuously updated database of LLM <strong>models</strong>,
+        <strong>providers</strong>, <strong>researchers</strong>, and
+        <strong>benchmarks</strong> — built to be the fastest way to look up what's
+        true about the AI landscape today.
+      </p>
+      <p class="status" role="status">
+        🚧 Early build in progress. The directory and detail pages are landing next.
+      </p>
+    </section>
+
+    <section class="pillars" aria-label="What LLM Reference covers">
+      <ul>
+        {
+          pillars.map((p) => (
+            <li>
+              <h2>{p.name}</h2>
+              <p>{p.blurb}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <footer class="site-footer">
+      <p>© {new Date().getFullYear()} LLM Reference. Building in the open.</p>
+    </footer>
+  </main>
+</BaseLayout>

@@ -1,0 +1,80 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  description: string;
+  /** Path-only canonical, e.g. "/" or "/models/gpt-5". Combined with site + base. */
+  path?: string;
+  /** Optional absolute OG image URL. */
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  path = '/',
+  image,
+} = Astro.props;
+
+const siteName = 'LLM Reference';
+
+// Astro.site is the configured origin; Astro.url.pathname already includes base.
+const canonical = new URL(path === '/' ? Astro.url.pathname : path, Astro.site).href;
+const ogImage = image ?? new URL(`${import.meta.env.BASE_URL}og-default.svg`, Astro.site).href;
+
+// Organization + WebSite structured data helps search engines and AI crawlers
+// understand the site early. Entity-level JSON-LD is added per detail page later.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      name: siteName,
+      url: new URL(import.meta.env.BASE_URL, Astro.site).href,
+      description:
+        'Up-to-the-day reference database for large language models, providers, researchers, and benchmarks.',
+    },
+    {
+      '@type': 'Organization',
+      name: siteName,
+      url: new URL(import.meta.env.BASE_URL, Astro.site).href,
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="sitemap" href={`${import.meta.env.BASE_URL}sitemap-index.xml`} />
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

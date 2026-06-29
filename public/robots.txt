@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Updated automatically when the custom domain is attached (see README → Deployment).
+Sitemap: https://michaeljgrimm.github.io/llmreference/sitemap-index.xml

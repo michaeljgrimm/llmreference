@@ -1,0 +1,26 @@
+{
+  "name": "llmreference",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "www.llmreference.com — up-to-the-day reference for LLM models, providers, researchers, and benchmarks.",
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.2.1",
+    "astro": "^5.2.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.7.3"
+  }
+}
