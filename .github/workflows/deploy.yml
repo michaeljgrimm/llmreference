@@ -39,6 +39,14 @@ jobs:
 
       - name: Build (Astro -> ./dist)
         run: npm run build
+        env:
+          # Analytics is config-driven and off until a provider is set. These are
+          # public client identifiers (never secrets) — set them as repo Variables
+          # (Settings → Secrets and variables → Actions → Variables). See docs/SEO.md.
+          PUBLIC_ANALYTICS_PROVIDER: ${{ vars.PUBLIC_ANALYTICS_PROVIDER }}
+          PUBLIC_ANALYTICS_DOMAIN: ${{ vars.PUBLIC_ANALYTICS_DOMAIN }}
+          PUBLIC_ANALYTICS_SRC: ${{ vars.PUBLIC_ANALYTICS_SRC }}
+          PUBLIC_ANALYTICS_TOKEN: ${{ vars.PUBLIC_ANALYTICS_TOKEN }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

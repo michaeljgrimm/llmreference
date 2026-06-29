@@ -1,0 +1,43 @@
+---
+// Lightweight, privacy-friendly web analytics — provider-agnostic and config-driven.
+//
+// Nothing is emitted unless a provider is configured via PUBLIC_* build-time env
+// vars (also settable as GitHub repo *Variables* — see docs/SEO.md). All tokens
+// used here are public client identifiers, never secrets, so this is safe to ship.
+//
+// Supported providers (set PUBLIC_ANALYTICS_PROVIDER to one of):
+//   plausible    – needs PUBLIC_ANALYTICS_DOMAIN (the site domain you registered).
+//                  Optional PUBLIC_ANALYTICS_SRC to point at a self-hosted script.
+//   cloudflare   – needs PUBLIC_ANALYTICS_TOKEN (Web Analytics beacon token).
+//   goatcounter  – needs PUBLIC_ANALYTICS_SRC (your https://<you>.goatcounter.com/count).
+//   umami        – needs PUBLIC_ANALYTICS_SRC (script URL) + PUBLIC_ANALYTICS_TOKEN (website id).
+//
+// All snippets are async/deferred so they never block first paint.
+const provider = (import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? '').trim().toLowerCase();
+const domain = import.meta.env.PUBLIC_ANALYTICS_DOMAIN;
+const src = import.meta.env.PUBLIC_ANALYTICS_SRC;
+const token = import.meta.env.PUBLIC_ANALYTICS_TOKEN;
+
+const plausibleSrc = src || 'https://plausible.io/js/script.js';
+---
+
+{provider === 'plausible' && domain && (
+  <script is:inline defer data-domain={domain} src={plausibleSrc}></script>
+)}
+
+{provider === 'cloudflare' && token && (
+  <script
+    is:inline
+    defer
+    src="https://static.cloudflareinsights.com/beacon.min.js"
+    data-cf-beacon={`{"token": "${token}"}`}
+  ></script>
+)}
+
+{provider === 'goatcounter' && src && (
+  <script is:inline data-goatcounter={src} async src="//gc.zgo.at/count.js"></script>
+)}
+
+{provider === 'umami' && src && token && (
+  <script is:inline defer src={src} data-website-id={token}></script>
+)}

@@ -30,9 +30,46 @@ const info = ([
   ['Direction', d.higherIsBetter ? 'Higher is better' : 'Lower is better'],
   ['Max score', d.maxScore != null ? String(d.maxScore) : '—'],
 ] as [string, string][]).filter(([, v]) => v && v !== '—');
+
+// Per-entity structured data: a benchmark is a Dataset whose variable is its
+// metric; the leaderboard is exposed as an ItemList for rich results / AI crawlers.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: d.name,
+  ...(d.fullName ? { alternateName: d.fullName } : {}),
+  description,
+  ...(d.url || d.paper ? { url: d.url ?? d.paper } : {}),
+  measurementTechnique: d.metric,
+  ...(detail.results.length > 0
+    ? {
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: detail.results.map((r, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: r.model.data.name,
+            ...(r.score != null ? { description: `${d.metric}: ${r.score}` } : {}),
+          })),
+        },
+      }
+    : {}),
+};
+
+const breadcrumbs = [
+  { name: 'LLM Reference', path: href('/') },
+  { name: 'Benchmarks', path: href('/benchmarks') },
+  { name: d.name, path: href(`/benchmarks/${benchmark.id}`) },
+];
 ---
 
-<BaseLayout title={title} description={description} path={`/benchmarks/${benchmark.id}`}>
+<BaseLayout
+  title={title}
+  description={description}
+  path={`/benchmarks/${benchmark.id}`}
+  ogType="article"
+  breadcrumbs={breadcrumbs}
+>
   <SiteHeader active="benchmarks" />
   <main>
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -110,5 +147,7 @@ const info = ([
         )
       }
     </section>
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </main>
 </BaseLayout>

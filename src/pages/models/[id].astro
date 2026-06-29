@@ -74,9 +74,21 @@ const specs = ([
   ['Open weights', d.openWeights ? 'Yes' : 'No'],
   ['API id', d.apiId ?? '—'],
 ] as [string, string][]).filter(([, v]) => v && v !== '—');
+
+const breadcrumbs = [
+  { name: 'LLM Reference', path: href('/') },
+  { name: 'Models', path: href('/models') },
+  { name: d.name, path: href(`/models/${model.id}`) },
+];
 ---
 
-<BaseLayout title={title} description={description} path={`/models/${model.id}`}>
+<BaseLayout
+  title={title}
+  description={description}
+  path={`/models/${model.id}`}
+  ogType="article"
+  breadcrumbs={breadcrumbs}
+>
   <SiteHeader active="models" />
   <main>
     <nav class="breadcrumb" aria-label="Breadcrumb">

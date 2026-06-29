@@ -39,9 +39,21 @@ const jsonLd = {
   ...(d.website ? { url: d.website } : {}),
   ...(d.founded ? { foundingDate: String(d.founded) } : {}),
 };
+
+const breadcrumbs = [
+  { name: 'LLM Reference', path: href('/') },
+  { name: 'Providers', path: href('/providers') },
+  { name: d.name, path: href(`/providers/${provider.id}`) },
+];
 ---
 
-<BaseLayout title={title} description={description} path={`/providers/${provider.id}`}>
+<BaseLayout
+  title={title}
+  description={description}
+  path={`/providers/${provider.id}`}
+  ogType="article"
+  breadcrumbs={breadcrumbs}
+>
   <SiteHeader active="providers" />
   <main>
     <nav class="breadcrumb" aria-label="Breadcrumb">

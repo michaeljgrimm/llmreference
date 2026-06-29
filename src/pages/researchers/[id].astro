@@ -35,9 +35,21 @@ const jsonLd = {
   ...(affName ? { affiliation: { '@type': 'Organization', name: affName } } : {}),
   ...(d.links?.homepage ? { url: d.links.homepage } : {}),
 };
+
+const breadcrumbs = [
+  { name: 'LLM Reference', path: href('/') },
+  { name: 'Researchers', path: href('/researchers') },
+  { name: d.name, path: href(`/researchers/${researcher.id}`) },
+];
 ---
 
-<BaseLayout title={title} description={description} path={`/researchers/${researcher.id}`}>
+<BaseLayout
+  title={title}
+  description={description}
+  path={`/researchers/${researcher.id}`}
+  ogType="article"
+  breadcrumbs={breadcrumbs}
+>
   <SiteHeader active="researchers" />
   <main>
     <nav class="breadcrumb" aria-label="Breadcrumb">
