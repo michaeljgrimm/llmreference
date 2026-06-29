@@ -3,8 +3,12 @@
 The up-to-the-day reference database for large language models — **models, providers,
 researchers, and benchmarks**. Source for **www.llmreference.com**.
 
-> Status: foundational scaffold. Placeholder homepage is live and auto-deploys on every
-> push to `main`. The data model and public directory land next (LLM-3, LLM-4).
+> Status: foundational scaffold + core data model. Placeholder homepage is live and
+> auto-deploys on every push to `main`. The public directory lands next (LLM-4).
+>
+> **Data model:** four file-based content collections (models, providers, researchers,
+> benchmarks) with type-safe Zod schemas and cross-entity references — see
+> [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md).
 
 **Live URL:** https://michaeljgrimm.github.io/llmreference/
 
@@ -30,7 +34,11 @@ SSR, ISR, or edge personalization, Astro adds an adapter (`@astrojs/vercel`,
 ```
 llmreference/
 ├─ astro.config.mjs        # site/base configurable via SITE_URL / BASE_PATH env
+├─ docs/DATA-MODEL.md      # entity schemas + the "up to the day" update workflow
 ├─ src/
+│  ├─ content.config.ts          # Zod schemas for the 4 collections (source of truth)
+│  ├─ content/<entity>/*.md       # the data: models, providers, researchers, benchmarks
+│  ├─ lib/queries.ts             # typed listing + detail queries (relations resolved)
 │  ├─ layouts/BaseLayout.astro   # <head>, SEO meta, JSON-LD, OG/Twitter
 │  ├─ pages/index.astro          # placeholder homepage
 │  └─ styles/global.css
